@@ -1,8 +1,13 @@
 const { app, BrowserWindow } = require('electron')
 const Push2Meet = require('./Push2Meet')
+const createMenu = require('./menu')
+
+app.name = 'Push2Meet'
+createMenu(app)
 
 app.whenReady().then(() => {
-  Push2Meet.create(app)
+  const meet = Push2Meet.create(app)
+  meet.run()
 })
 
 // // Quit when all windows are closed.
@@ -18,6 +23,7 @@ app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
-    Push2Meet.create(app)
+    const meet = Push2Meet.create(app)
+    meet.run()
   }
 })

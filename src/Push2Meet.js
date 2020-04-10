@@ -4,15 +4,26 @@ const { BrowserWindow, Notification } = require('electron')
 const ioHook = require('iohook')
 const keys = require('./keys')
 
-const GOOGLE_MEET_URL = 'https://meet.google.com'
+const GOOGLE_MEET_URL = 'https://meet.google.com/'
+const MUTE_SOUND = 'https://push2meet.sfo2.digitaloceanspaces.com/mute.mp3'
+const UNMUTE_SOUND = 'https://push2meet.sfo2.digitaloceanspaces.com/unmute.mp3'
 
 function Push2Meet(app) {
+  this.app = app
   this.ready = false
   this.keybind = keys.COMMAND
 
   // Register all events
   this.registerEvents()
+}
 
+Push2Meet.create = function (app) {
+  return new Push2Meet(app)
+}
+
+util.inherits(Push2Meet, EventEmitter)
+
+Push2Meet.prototype.run = function (meetCode = '') {
   // Instantiate Browser Window and load Google Meet
   this.webView = new BrowserWindow({
     width: 1024,
@@ -23,38 +34,24 @@ function Push2Meet(app) {
     },
     opacity: 0,
   })
-  this.webView.loadURL(GOOGLE_MEET_URL, {
-    userAgent: app.userAgentFallback.replace(`Electron/${process.versions.electron}`, ''),
-  }).then(() => {
-    this.ready = true
-    this.emit('ready')
-  })
-}
 
-Push2Meet.create = function (app) {
-  return new Push2Meet(app)
-}
-
-util.inherits(Push2Meet, EventEmitter)
-
-Push2Meet.prototype.registerEvents = function () {
-  this.on('keyholdstart', () => {
-    this.toggleMic()
-  })
-  this.on('keyholdend', () => {
-    setTimeout(() => {
-      this.toggleMic()
-    }, 200)
-  })
-  this.on('ready', async () => {
-    this.webView.setOpacity(1)
-    this.webView.webContents.openDevTools()
-    this.registerKeyHoldEvents()
-    this.webView.webContents.on('dom-ready', () => {
-      this.webView.webContents.executeJavaScript(`
+  this.webView.webContents.on('dom-ready', () => {
+    this.webView.webContents.executeJavaScript(`
+      const unmuteSound = new Audio('${UNMUTE_SOUND}')
+      const muteSound = new Audio('${MUTE_SOUND}')
+      console.log('Page Loaded');
+      const muteButton = document.querySelector('[data-tooltip~="microphone"]');
+      if (muteButton) {
+        muteButton.addEventListener('click', (e) => {
+          console.log('event', e);
+          if (muteButton.dataset.isMuted === 'true') {
+            e.isTrusted ? muteSound.play() : unmuteSound.play();
+          } else {
+            e.isTrusted ? unmuteSound.play() : muteSound.play();
+          }
+        })
+      }
       const toggleMute = () => {
-        const muteButton = document.querySelector('[data-tooltip~="microphone"]');
-        console.log('muteButton', muteButton);
         if (muteButton) {
           muteButton.click();
           console.log('Browser: mic mute toggled');
@@ -63,9 +60,34 @@ Push2Meet.prototype.registerEvents = function () {
         }
       }
     `).then(async () => {
-        console.log('JS Executed')
-      })
+      console.log('JS Executed')
+    }).catch((err) => {
+      console.log('ERROR')
+      console.error(err)
     })
+  })
+  this.webView.webContents.openDevTools()
+  this.webView.loadURL(`${GOOGLE_MEET_URL}${meetCode}`, {
+    userAgent: this.app.userAgentFallback.replace(`Electron/${process.versions.electron}`, ''),
+  }).then(async () => {
+    await this.webView.webContents.session.clearCache();
+    this.ready = true
+    this.emit('ready')
+  })
+}
+
+Push2Meet.prototype.registerEvents = function () {
+  this.on('keyholdstart', () => {
+    this.toggleMic()
+  })
+  this.on('keyholdend', () => {
+    setTimeout(() => {
+      this.toggleMic()
+    }, 250)
+  })
+  this.on('ready', async () => {
+    this.webView.setOpacity(1)
+    this.registerKeyHoldEvents()
   })
 }
 
@@ -73,10 +95,8 @@ Push2Meet.prototype.toggleMic = function () {
   this.webView.webContents.executeJavaScript(`
     toggleMute();
   `).then(() => {
-    console.log('App: mic mute toggled');
-    this.notify('Mic mute toggled.', 3000)
+    console.log('toggling')
   }).catch((err) => {
-    console.log('ERROR HAPPENED')
     console.error('error', err)
   })
 }
