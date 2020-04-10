@@ -12,8 +12,11 @@
     "electron-builder": "^22.4.1"
   },
   "dependencies": {
+    "electron-shared-state": "^0.5.0",
+    "hotkeys-js": "^3.7.6",
     "howler": "^2.1.3",
-    "iohook": "^0.6.5"
+    "iohook": "^0.6.5",
+    "mousetrap": "^1.6.5"
   },
   "iohook": {
     "targets": [

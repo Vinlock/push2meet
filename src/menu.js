@@ -1,5 +1,7 @@
 const { Menu, BrowserWindow } = require('electron')
 const Push2Meet = require('./Push2Meet')
+const keys = require('./keys')
+const { keybindStore } = require('./state')
 
 const checkMenuItem = (menuItem) => {
   menuItem.menu.items.forEach((item) => {
@@ -28,20 +30,57 @@ const createMenu = (app) => {
       ]
     },
     {
-      label: 'File',
+      label: 'Options',
       submenu: [
         {
-          label: 'New Meet Window',
-          click: () => {
-            const meet = Push2Meet.create(app)
-            meet.run()
-          }
-        }
-      ]
-    },
-    {
-      label: 'View',
-      submenu: [
+          label: 'Set Keybind',
+          submenu: [
+            {
+              label: 'Command/Windows Key',
+              click: (menuItem) => {
+                keybindStore.setState((state) => {
+                  return keys.COMMAND
+                })
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: true,
+            },
+            {
+              label: 'Shift Key',
+              click: (menuItem) => {
+                keybindStore.setState((state) => {
+                  return keys.SHIFT
+                })
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+            {
+              label: 'Control Key',
+              click: (menuItem) => {
+                keybindStore.setState((state) => {
+                  return keys.CTRL
+                })
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+            {
+              label: 'Alt Key',
+              click: (menuItem) => {
+                keybindStore.setState((state) => {
+                  return keys.ALT
+                })
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+          ],
+        },
         {
           label: 'Set Opacity',
           submenu: [

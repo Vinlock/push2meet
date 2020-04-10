@@ -1,8 +1,10 @@
 const { app, BrowserWindow } = require('electron')
 const Push2Meet = require('./Push2Meet')
 const createMenu = require('./menu')
+const keys = require('./keys')
 
 app.name = 'Push2Meet'
+app.keybind = keys.COMMAND
 createMenu(app)
 
 app.whenReady().then(() => {

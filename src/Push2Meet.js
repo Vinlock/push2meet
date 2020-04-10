@@ -2,7 +2,10 @@ const util = require('util')
 const { EventEmitter } = require('events')
 const { BrowserWindow, Notification } = require('electron')
 const ioHook = require('iohook')
+const { keybindStore } = require('./state')
 const keys = require('./keys')
+
+global.keybind = keys.COMMAND
 
 const GOOGLE_MEET_URL = 'https://meet.google.com/'
 const MUTE_SOUND = 'https://push2meet.sfo2.digitaloceanspaces.com/mute.mp3'
@@ -11,7 +14,8 @@ const UNMUTE_SOUND = 'https://push2meet.sfo2.digitaloceanspaces.com/unmute.mp3'
 function Push2Meet(app) {
   this.app = app
   this.ready = false
-  this.keybind = keys.COMMAND
+  this.keybind = keys.CTRL
+  console.log('this.keybind', this.keybind)
 
   // Register all events
   this.registerEvents()
@@ -24,6 +28,10 @@ Push2Meet.create = function (app) {
 util.inherits(Push2Meet, EventEmitter)
 
 Push2Meet.prototype.run = function (meetCode = '') {
+  keybindStore.subscribe((keybind) => {
+    this.emit('keybindupdate', keybind)
+  })
+
   // Instantiate Browser Window and load Google Meet
   this.webView = new BrowserWindow({
     width: 1024,
@@ -77,26 +85,33 @@ Push2Meet.prototype.run = function (meetCode = '') {
 }
 
 Push2Meet.prototype.registerEvents = function () {
-  this.on('keyholdstart', () => {
+  const keyHoldStartHandler = () => {
     this.toggleMic()
-  })
-  this.on('keyholdend', () => {
+  }
+  const keyHoldEndHandler = () => {
     setTimeout(() => {
       this.toggleMic()
     }, 250)
-  })
-  this.on('ready', async () => {
+  }
+  const readyHandler = () => {
     this.webView.setOpacity(1)
-    this.registerKeyHoldEvents()
-  })
+    this._registerKeyHoldEvents()
+    ioHook.start()
+  }
+  const keyBindUpdateHandler = (keybind) => {
+    this.keybind = keybind
+  }
+
+  this.on('keyholdstart', keyHoldStartHandler)
+  this.on('keyholdend', keyHoldEndHandler)
+  this.on('ready', readyHandler)
+  this.on('keybindupdate', keyBindUpdateHandler)
 }
 
 Push2Meet.prototype.toggleMic = function () {
   this.webView.webContents.executeJavaScript(`
     toggleMute();
-  `).then(() => {
-    console.log('toggling')
-  }).catch((err) => {
+  `).catch((err) => {
     console.error('error', err)
   })
 }
@@ -112,25 +127,42 @@ Push2Meet.prototype.notify = function (content, timeout = 1000) {
   notification.show()
 }
 
-Push2Meet.prototype.registerKeyHoldEvents = function () {
-  ioHook.on('keydown', (event) => {
-    const isValidEvent = eventIsKey(event, this.keybind)
-    if (isValidEvent) {
-      this.emit('keyholdstart')
-    }
+Push2Meet.prototype._keyWasPressed = function (event) {
+  return !Object.keys(this.keybind).some((eventKey) => {
+    const eventValue = event[eventKey]
+    const validValue = this.keybind[eventKey]
+    return eventValue !== validValue
   })
+}
 
-  ioHook.on('keyup', (event) => {
-    const isValidEvent = eventIsKey(event, this.keybind)
-    if (isValidEvent) {
-      this.emit('keyholdend')
-    }
-  })
+Push2Meet.prototype._handleKeyDownEvent = function (event) {
+  const isValidEvent = this._keyWasPressed(event)
+  if (isValidEvent) {
+    this.emit('keyholdstart')
+  }
+}
 
-  ioHook.start()
+Push2Meet.prototype._handleKeyUpEvent = function (event) {
+  const isValidEvent = this._keyWasPressed(event)
+  if (isValidEvent) {
+    this.emit('keyholdend')
+  }
+}
+
+Push2Meet.prototype._unregisterKeyHoldEvents = function () {
+  ioHook.removeAllListeners()
+}
+
+Push2Meet.prototype._registerKeyHoldEvents = function () {
+  const keyDownHandler = this._handleKeyDownEvent.bind(this)
+  const keyUpHandler = this._handleKeyUpEvent.bind(this)
+  ioHook.addListener('keydown', keyDownHandler)
+  ioHook.addListener('keyup', keyUpHandler)
 }
 
 const eventIsKey = (event, key) => {
+  console.log('event', event)
+  console.log('key', key)
   return !Object.keys(key).some((eventKey) => {
     const eventValue = event[eventKey]
     const validValue = key[eventKey]
