@@ -2,7 +2,7 @@ const util = require('util')
 const { EventEmitter } = require('events')
 const { BrowserWindow, Notification } = require('electron')
 const ioHook = require('iohook')
-const { keybindStore } = require('./state')
+const { keybindStore, volumeStore } = require('./state')
 const keys = require('./keys')
 
 global.keybind = keys.COMMAND
@@ -27,10 +27,6 @@ Push2Meet.create = function (app) {
 util.inherits(Push2Meet, EventEmitter)
 
 Push2Meet.prototype.run = function (meetCode = '') {
-  keybindStore.subscribe((keybind) => {
-    this.emit('keybindupdate', keybind)
-  })
-
   // Instantiate Browser Window and load Google Meet
   this.webView = new BrowserWindow({
     width: 1024,
@@ -49,9 +45,9 @@ Push2Meet.prototype.run = function (meetCode = '') {
           || document.querySelector('[data-tooltip="Turn on microphone (⌘ + d)"]');
       }
       const unmuteSound = new Audio('${UNMUTE_SOUND}');
-      unmuteSound.volume = 0.5;
+      unmuteSound.volume = 0.1;
       const muteSound = new Audio('${MUTE_SOUND}');
-      muteSound.volume = 0.5;
+      muteSound.volume = 0.1;
       let muteButton = null;
       
       const observer = new MutationObserver((mutationList) => {
@@ -89,6 +85,12 @@ Push2Meet.prototype.run = function (meetCode = '') {
       }
     `).then(async () => {
       console.log('JS Executed')
+      keybindStore.subscribe((keybind) => {
+        this.emit('keybindupdate', keybind)
+      })
+      volumeStore.subscribe((volume) => {
+        this.emit('volumeupdate', volume)
+      })
     }).catch((err) => {
       console.log('ERROR')
       console.error(err)
@@ -121,11 +123,15 @@ Push2Meet.prototype.registerEvents = function () {
   const keyBindUpdateHandler = (keybind) => {
     this.keybind = keybind
   }
+  const volumeUpdateHandler = (volume) => {
+    this.updateVolume(volume)
+  }
 
   this.on('keyholdstart', keyHoldStartHandler)
   this.on('keyholdend', keyHoldEndHandler)
   this.on('ready', readyHandler)
   this.on('keybindupdate', keyBindUpdateHandler)
+  this.on('volumeupdate', volumeUpdateHandler)
 }
 
 Push2Meet.prototype.toggleMic = function () {
@@ -133,6 +139,20 @@ Push2Meet.prototype.toggleMic = function () {
     toggleMute();
   `).catch((err) => {
     console.error('error', err)
+  })
+}
+
+Push2Meet.prototype.updateVolume = function (volume) {
+  this.webView.webContents.executeJavaScript(`
+    if (unmuteSound) {
+      unmuteSound.volume = ${volume};
+    }
+    if (muteSound) {
+      muteSound.volume = ${volume};
+    }
+  `).catch((err) => {
+    console.log('VOLUME ERROR')
+    console.error(err)
   })
 }
 

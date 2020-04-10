@@ -1,7 +1,7 @@
 const { Menu, BrowserWindow } = require('electron')
 const Push2Meet = require('./Push2Meet')
 const keys = require('./keys')
-const { keybindStore } = require('./state')
+const { keybindStore, volumeStore } = require('./state')
 
 const checkMenuItem = (menuItem) => {
   menuItem.menu.items.forEach((item) => {
@@ -92,6 +92,101 @@ const createMenu = () => {
               checked: false,
             },
           ],
+        },
+        {
+          label: 'Set Volume',
+          submenu: [
+            {
+              label: '10%',
+              click: (menuItem) => {
+                volumeStore.setState(() => '0.1')
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: true,
+            },
+            {
+              label: '20%',
+              click: (menuItem) => {
+                volumeStore.setState(() => '0.2')
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+            {
+              label: '30%',
+              click: (menuItem) => {
+                volumeStore.setState(() => '0.3')
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+            {
+              label: '40%',
+              click: (menuItem) => {
+                volumeStore.setState(() => '0.4')
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+            {
+              label: '50%',
+              click: (menuItem) => {
+                volumeStore.setState(() => '0.5')
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+            {
+              label: '60%',
+              click: (menuItem) => {
+                volumeStore.setState(() => '0.6')
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+            {
+              label: '70%',
+              click: (menuItem) => {
+                volumeStore.setState(() => '0.7')
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+            {
+              label: '80%',
+              click: (menuItem) => {
+                volumeStore.setState(() => '0.8')
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+            {
+              label: '90%',
+              click: (menuItem) => {
+                volumeStore.setState(() => '0.9')
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+            {
+              label: '100%',
+              click: (menuItem) => {
+                volumeStore.setState(() => '1')
+                checkMenuItem(menuItem)
+              },
+              type: 'checkbox',
+              checked: false,
+            },
+          ]
         },
         {
           label: 'Set Opacity',
