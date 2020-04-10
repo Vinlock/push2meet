@@ -74,7 +74,7 @@ Push2Meet.prototype.run = function (meetCode = '') {
       console.error(err)
     })
   })
-  this.webView.webContents.openDevTools()
+  // this.webView.webContents.openDevTools()
   this.webView.loadURL(`${GOOGLE_MEET_URL}${meetCode}`, {
     userAgent: this.app.userAgentFallback.replace(`Electron/${process.versions.electron}`, ''),
   }).then(async () => {
