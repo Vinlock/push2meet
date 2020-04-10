@@ -13,7 +13,7 @@ const checkMenuItem = (menuItem) => {
   })
 }
 
-const createMenu = (app) => {
+const createMenu = () => {
   const menuTemplate = [
     {
       label: 'Push2Meet',

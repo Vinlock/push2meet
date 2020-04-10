@@ -149,10 +149,6 @@ Push2Meet.prototype._handleKeyUpEvent = function (event) {
   }
 }
 
-Push2Meet.prototype._unregisterKeyHoldEvents = function () {
-  ioHook.removeAllListeners()
-}
-
 Push2Meet.prototype._registerKeyHoldEvents = function () {
   const keyDownHandler = this._handleKeyDownEvent.bind(this)
   const keyUpHandler = this._handleKeyUpEvent.bind(this)
@@ -161,8 +157,6 @@ Push2Meet.prototype._registerKeyHoldEvents = function () {
 }
 
 const eventIsKey = (event, key) => {
-  console.log('event', event)
-  console.log('key', key)
   return !Object.keys(key).some((eventKey) => {
     const eventValue = event[eventKey]
     const validValue = key[eventKey]
