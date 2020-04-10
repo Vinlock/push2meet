@@ -14,8 +14,7 @@ const UNMUTE_SOUND = 'https://push2meet.sfo2.digitaloceanspaces.com/unmute.mp3'
 function Push2Meet(app) {
   this.app = app
   this.ready = false
-  this.keybind = keys.CTRL
-  console.log('this.keybind', this.keybind)
+  this.keybind = keys.SHIFT
 
   // Register all events
   this.registerEvents()
@@ -45,20 +44,39 @@ Push2Meet.prototype.run = function (meetCode = '') {
 
   this.webView.webContents.on('dom-ready', () => {
     this.webView.webContents.executeJavaScript(`
-      const unmuteSound = new Audio('${UNMUTE_SOUND}')
-      const muteSound = new Audio('${MUTE_SOUND}')
-      console.log('Page Loaded');
-      const muteButton = document.querySelector('[data-tooltip~="microphone"]');
-      if (muteButton) {
-        muteButton.addEventListener('click', (e) => {
-          console.log('event', e);
-          if (muteButton.dataset.isMuted === 'true') {
-            e.isTrusted ? muteSound.play() : unmuteSound.play();
-          } else {
-            e.isTrusted ? unmuteSound.play() : muteSound.play();
-          }
-        })
+      const getMuteButton = () => {
+        return document.querySelector('[data-tooltip="Turn off microphone (⌘ + d)"]')
+          || document.querySelector('[data-tooltip="Turn on microphone (⌘ + d)"]');
       }
+      const unmuteSound = new Audio('${UNMUTE_SOUND}');
+      const muteSound = new Audio('${MUTE_SOUND}');
+      let muteButton = null;
+      
+      const observer = new MutationObserver((mutationList) => {
+        console.log('mutationList', mutationList);
+        if (muteButton && document.body.contains(muteButton)) {
+          console.log('old still here');
+        } else if (document.body.contains(getMuteButton())) {
+          console.log('resetting');
+          muteButton = getMuteButton();
+          console.log('reset mute button', muteButton);
+          muteButton.addEventListener('click', (event) => {
+            console.log('event', event);
+            console.log('isMuted', muteButton.dataset.isMuted);
+            if (muteButton.dataset.isMuted === 'true') {
+              event.isTrusted ? muteSound.play() : unmuteSound.play();
+            } else {
+              event.isTrusted ? unmuteSound.play() : muteSound.play();
+            }
+          })
+        }
+      })
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+    
+      console.log('Page Loaded');
       const toggleMute = () => {
         if (muteButton) {
           muteButton.click();
@@ -154,14 +172,6 @@ Push2Meet.prototype._registerKeyHoldEvents = function () {
   const keyUpHandler = this._handleKeyUpEvent.bind(this)
   ioHook.addListener('keydown', keyDownHandler)
   ioHook.addListener('keyup', keyUpHandler)
-}
-
-const eventIsKey = (event, key) => {
-  return !Object.keys(key).some((eventKey) => {
-    const eventValue = event[eventKey]
-    const validValue = key[eventKey]
-    return eventValue !== validValue
-  })
 }
 
 module.exports = Push2Meet
