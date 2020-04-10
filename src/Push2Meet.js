@@ -51,22 +51,17 @@ Push2Meet.prototype.run = function (meetCode = '') {
       let muteButton = null;
       
       const observer = new MutationObserver((mutationList) => {
-        console.log('mutationList', mutationList);
-        if (muteButton && document.body.contains(muteButton)) {
-          console.log('old still here');
-        } else if (document.body.contains(getMuteButton())) {
-          console.log('resetting');
-          muteButton = getMuteButton();
-          console.log('reset mute button', muteButton);
-          muteButton.addEventListener('click', (event) => {
-            console.log('event', event);
-            console.log('isMuted', muteButton.dataset.isMuted);
-            if (muteButton.dataset.isMuted === 'true') {
-              event.isTrusted ? muteSound.play() : unmuteSound.play();
-            } else {
-              event.isTrusted ? unmuteSound.play() : muteSound.play();
-            }
-          })
+        if (!muteButton || !document.body.contains(muteButton)) {
+          if (document.body.contains(getMuteButton())) {
+            muteButton = getMuteButton();
+            muteButton.addEventListener('click', (event) => {
+              if (muteButton.dataset.isMuted === 'true') {
+                event.isTrusted ? muteSound.play() : unmuteSound.play();
+              } else {
+                event.isTrusted ? unmuteSound.play() : muteSound.play();
+              }
+            })
+          }
         }
       })
       observer.observe(document.body, {
