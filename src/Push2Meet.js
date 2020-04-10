@@ -49,7 +49,9 @@ Push2Meet.prototype.run = function (meetCode = '') {
           || document.querySelector('[data-tooltip="Turn on microphone (⌘ + d)"]');
       }
       const unmuteSound = new Audio('${UNMUTE_SOUND}');
+      unmuteSound.volume = 0.5;
       const muteSound = new Audio('${MUTE_SOUND}');
+      muteSound.volume = 0.5;
       let muteButton = null;
       
       const observer = new MutationObserver((mutationList) => {
