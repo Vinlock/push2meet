@@ -56,7 +56,7 @@ const createMenu = () => {
                 checkMenuItem(menuItem)
               },
               type: 'checkbox',
-              checked: true,
+              checked: false,
             },
             {
               label: 'Shift Key',
@@ -67,7 +67,7 @@ const createMenu = () => {
                 checkMenuItem(menuItem)
               },
               type: 'checkbox',
-              checked: false,
+              checked: true,
             },
             {
               label: 'Control Key',
